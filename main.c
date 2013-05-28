@@ -9,8 +9,8 @@
 
 #include "udev.h"
 #include "filesystem.h"
+#include "signalhandler.h"
 
-#define SLENGHT 128
 
 int main(int argc, char **argv){
 		struct udev_info *u = create_udev_info();
@@ -21,6 +21,8 @@ int main(int argc, char **argv){
 
 		if (!udev_monitor_start(u))
 			exit(1);
+
+		signal(SIGINT, signal_handler_callback);
 
 		mountpath = (char*)malloc(SLENGHT * sizeof(char));
 		devname = (char*)malloc(SLENGHT * sizeof(char));
@@ -44,14 +46,21 @@ int main(int argc, char **argv){
 								u->dev = udev_monitor_receive_device(u->mon);
 
 				udev_device_get_devnode(u->dev);
-				
-				if(strcmp(udev_device_get_devtype(u->dev), "partition") == 0){
+
+				/*For mount devices, yaamd should expect for the whole disk
+				 * and send this information for libblkid, otherwise there's
+				 * no way to find out the partitions type of an umounted device.
+				 *For umount devices, yammd should expect by each partition,
+				 * or it will try to mount root device returning error on umounting*/
+
+				if(strcmp(udev_device_get_devtype(u->dev), "disk") == 0
+						  && strcmp(udev_device_get_action(u->dev), "add") == 0){
 						int mret;
 						char *cmd;
 						char *devtmp; /*needed to be tokenized, otherwise original value gets lost*/
 						
 						fprintf(stdout, "\n Select():\n");
-						fprintf(stdout, "Action: %s, Partition: %s\n", udev_device_get_action(u->dev),
+						fprintf(stdout, "Action: %s, Disk: %s\n", udev_device_get_action(u->dev),
 																	   udev_device_get_devnode(u->dev));
 						
 
@@ -65,24 +74,12 @@ int main(int argc, char **argv){
 
 						free(devtmp);
 					
-						if (strcmp(udev_device_get_action(u->dev), "add") == 0){
-							char *cmd = (char*)malloc(SLENGHT * sizeof(char));
-							sprintf(cmd, "DISPLAY=:0 zenity --notification --text=\"Dispositivo USB(%s)\
-										 encontrado e montado(%s)\" --timeout=2", devname, mountpath);
-
-							if (mountdevice(devname, mountpath) == 0){
-								sprintf(cmd, "DISPLAY=:0 zenity --notification --text=\"Dispositivo USB(%s)\
-										 encontrado e montado(%s)\" --timeout=2", devname, mountpath);
-								system(cmd);
-								
-								sprintf(cmd, "DISPLAY=:0 pcmanfm %s", mountpath);
-								system(cmd);
-							}
-
-						}else if(strcmp(udev_device_get_action(u->dev), "remove") == 0){
-							system("DISPLAY=:0 zenity --notification --text=\"Dispositivo USB removido\" --timeout=2");
-							umountdevice(mountpath);
-						}
+						mountdevice(devname) == 0 ? fprintf(stdout, "%s mounted!!!\n", devname) :
+							   						fprintf(stderr, "Could not mount %s\n", devname);
+				}else if(strcmp(udev_device_get_devtype(u->dev), "partition") == 0
+						 && strcmp(udev_device_get_action(u->dev), "remove") == 0){
+						system("DISPLAY=:0 zenity --notification --text=\"Dispositivo USB removido\" --timeout=2");
+						umountdevice(udev_device_get_devnode(u->dev));
 				}
 			}
 

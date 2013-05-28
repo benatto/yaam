@@ -4,10 +4,26 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#define SLENGHT 128
+#define MOUNTPREFIX "/media/USBSTICK"
+
 /*Mounts a device
  * Param1: device node
- * Param2: mounting point*/
-int mountdevice(const char*, const char*);
+ */
+int mountdevice(const char*);
+
 /*Removes a not mounted more dir
- * Param1: directory*/;
+ * Param1: directory
+ */;
 int umountdevice(const char*);
+
+/*Returns the "must-be" filesystem type from a umounted device
+ * Param1: type code 
+ */
+char *getpartitiontype(int);
+
+/*Returns the mountpoint path to a given device name
+ * Param1: device name
+ * PS.: Note that this function doesn't free it's return
+ * caller must handle this kind of thing*/
+char *getmountpoint(const char*);
