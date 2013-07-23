@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <libudev.h>
 
+#define __udev_dev_is_disk(dev) strcmp(udev_device_get_devtype(dev), "disk") 
+
 struct udev_info{
 		struct udev *udev; /*udev API struct*/
 		struct udev_enumerate *enumerate; /*udev enum struct*/

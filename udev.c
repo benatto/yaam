@@ -2,6 +2,7 @@
 
 #define DELIM "/"
 
+
 struct udev_info *create_udev_info(){
 		struct udev_info *udev_i = (struct udev_info*)malloc(sizeof(struct udev_info));
 
@@ -37,8 +38,16 @@ int udev_monitor_start(struct udev_info *u){
 
 char *udev_get_partition(const char *devname){
 	const char delim[2] = "/";
+	char *tmp = (char*)malloc((strlen(devname) + 1 ) * sizeof(char));
 
-	char *token = strtok(devname, delim);
+	/*Copying the original value to a temp var
+	 * as strtok will destroy the value from string and
+	 * devname value pointed here could be used outside this function
+	 * for any other reason */
+	if (!strcpy(tmp, devname))
+		return NULL;
+
+	char *token = strtok(tmp, delim);
 	char *part;
 
 	while (token != NULL){
@@ -47,6 +56,9 @@ char *udev_get_partition(const char *devname){
 		if(token)
 			part = token;
 	}
+
+	/*Freeing temporary variable*/
+	free(tmp);
 
 	return part;
 }

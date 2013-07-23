@@ -6,6 +6,7 @@
 
 #define SLENGHT 128
 #define MOUNTPREFIX "/media/USBSTICK"
+#define SYSLENGHT 255
 
 /*Mounts a device
  * Param1: device node
@@ -27,3 +28,8 @@ char *getpartitiontype(int);
  * PS.: Note that this function doesn't free it's return
  * caller must handle this kind of thing*/
 char *getmountpoint(const char*);
+
+/*Returns 1 in case the device pointed by arg path
+ * is a removable media or 0 case not
+ * */
+int isdevremovable(const char*);

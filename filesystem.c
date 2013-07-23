@@ -180,3 +180,36 @@ char *getmountpoint(const char *devnode){
 	return mountpoint;
 
 }
+
+int isdevremovable(const char *path){
+	FILE *fp;
+	char *syspath;
+	char ret;
+
+	syspath = (char*)malloc(SYSLENGHT * sizeof(char));
+
+	if(!syspath){
+		fprintf(stderr, "[ERROR]Cannot allocate memory __FILE__. Exiting...\n");
+		exit(-ENOMEM);
+	}
+
+	/*Creating sysfs path to removable file for path parameter*/
+	sprintf(syspath, "/sys/block/%s/removable", udev_get_partition(path));
+
+	fp = fopen(syspath, "r");
+
+	if(!fp){
+		fprintf(stderr, "[Warning]: __FILE__ could not open sysfs info file, assuming\
+						device is not removable\n");
+		return 0;
+	}
+
+	fscanf(fp, "%c", &ret);
+
+	/*Freeing memory*/
+	close(fp);
+	free(syspath);
+
+	return atoi(&ret);
+
+}
